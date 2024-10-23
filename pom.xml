@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.zetyun</groupId>
-    <artifactId>daemon-service</artifactId>
+    <artifactId>aps-statics-service</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -80,7 +80,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.zetyun.daemon.DaemonService</mainClass>
+                                    <mainClass>com.zetyun.statics.DaemonService</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

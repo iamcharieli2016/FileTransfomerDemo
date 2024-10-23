@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bap-license
+  namespace: default
+  labels:
+    app: license-backend
+    version: latest # 做版本区分
+spec:
+  selector:
+    matchLabels:
+      app: license-backend
+  # 更新策k略
+  strategy:
+    rollingUpdate:
+      maxSurge: 1    # 更新最大数量
+      maxUnavailable: 1   #更新时最大不可用数量
+    type: RollingUpdate  #滚动更新
+  replicas: 1  # 多副本，做负载均衡用
+  template:
+    metadata:
+      labels:
+        app: license-backend
+    spec:
+      containers:
+        - name: license-backend
+          image: registry.bap.datacanvas.com:55443/bap/bap-license-2.0.2:latest  # 使用的 镜像，一般更新镜像
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7050 # 容器暴露的端口 ，与后台端口一直
+          command: ["java", "-jar","-Duser.timezone=GMT+08", "/opt/license/app.jar"]
+          args: ["--spring.config.location=/opt/license/config/application.yml"]
+          resources:
+            requests:
+              cpu: "200m" # CPU限制
+              memory: "4Gi" # 内存限制
+          # 健康监测
+          livenessProbe:
+            httpGet:
+              path: /health # 探测路径  最好使用 /health 路径,能正常访问就行，失败则会删除容器重新创建
+              port: 7050 # 端口
+            initialDelaySeconds: 15 # 第一次探测等待
+            timeoutSeconds: 3 # 探测的超时后等待多少秒
+            periodSeconds: 60 # 每 1 分钟检测一次
+            failureThreshold: 3 # 重试次数
+          # 就绪探测
+          readinessProbe:
+            httpGet:
+              path: /health # 探测路径  最好使用 /health 路径,能正常访问就行，失败则会从 endpoint 里面删掉相关 ip
+              port: 7050 # 端口
+            initialDelaySeconds: 10 # 第一次探测等待
+            timeoutSeconds: 3 # 探测的超时后等待多少秒
+            periodSeconds: 60 # 每 1 分钟检测一次
+            failureThreshold: 3 # 重试次数
+          #环境变量
+          env:
+            - name: prod
+              value: prod
+          # 设置 pod 尽量不要调度到同一节点，多副本的时候
+          # 设置时区和宿主机一致
+          volumeMounts:
+            - mountPath: /opt/license/config
+              name: config
+            - mountPath: /opt/license/tmp
+              name: license-tmp
+      volumes:
+        - name: config
+          configMap:
+            name: license-backend
+        - name: license-tmp
+          hostPath:
+            path: /mnt/bap/license/tmp
+            type: Directory
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - bap-frontend
+                topologyKey: kubernetes.io/hostname
+
+---
+## svc 一般不会变动，最好分开，更新只更新 deployment，如果多版本则可以一起配置
+apiVersion: v1
+kind: Service
+metadata:
+  name: license-backend-svc
+  namespace: default
+  labels:
+    app: license-backend
+spec:
+  type: NodePort
+  sessionAffinity: ClientIP  # 同一个客户端 IP，会被发送到同一个 Pod 上
+  ports:
+    - name: bap-backend-http
+      protocol: TCP
+      port: 7050
+      targetPort: 7050
+      nodePort: 31750
+  selector:
+    app: license-backend
+
+

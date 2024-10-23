@@ -1,7 +1,7 @@
-package com.zetyun.daemon.db;
+package com.zetyun.statics.db;
 
-import com.zetyun.daemon.config.ConfigLoader;
-import com.zetyun.daemon.model.Tenant;
+import com.zetyun.statics.config.ConfigLoader;
+import com.zetyun.statics.model.Tenant;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 

@@ -1,4 +1,4 @@
-package com.zetyun.daemon.model;
+package com.zetyun.statics.model;
 public class Tenant {
     private String id;
     private String name;

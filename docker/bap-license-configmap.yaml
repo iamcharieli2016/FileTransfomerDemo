@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: license-backend
+  namespace: default
+data:
+  application.yml: |
+    server:
+      servlet:
+        context-path: /
+      port: 7050
+    spring:
+      application:
+        name: tenant-license
+      datasource:
+        driver-class-name: org.postgresql.Driver
+        url: jdbc:postgresql://172.20.19.17:31432/bap_license
+        username: bap
+        password: Zetyun_2021!
+    mybatis-plus:
+      configLocation: classpath:/config/mybatis-config.xml
+      mapperLocations: classpath*:mybatis/*/*mapper.xml,classpath*:mybatis/**/*mapper.xml
+    license:
+      validityPeriod: 9999
+      location: /opt/license/tmp/

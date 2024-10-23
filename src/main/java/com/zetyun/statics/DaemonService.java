@@ -1,10 +1,10 @@
-package com.zetyun.daemon;
+package com.zetyun.statics;
 
-import com.zetyun.daemon.config.ConfigLoader;
-import com.zetyun.daemon.db.DatabaseManager;
-import com.zetyun.daemon.http.HttpClient;
-import com.zetyun.daemon.model.Tenant;
-import com.zetyun.daemon.util.ModuleExtractor;
+import com.zetyun.statics.config.ConfigLoader;
+import com.zetyun.statics.db.DatabaseManager;
+import com.zetyun.statics.http.HttpClient;
+import com.zetyun.statics.model.Tenant;
+import com.zetyun.statics.util.ModuleExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +48,7 @@ public class DaemonService {
         dbManager.initializeTables();
 
         fieldList = Arrays.asList(config.getProperty("wide.table.fields").split(","));
+        runTask();
     }
 
     private static void scheduleTask() {
@@ -77,14 +78,16 @@ public class DaemonService {
 
     private static void runTask() {
         try {
-            //1. 获取租户列表
-            logger.info("Start to get tenant list.");
-            List<Tenant> tenants = dbManager.getTenants();
-            logger.info("Finished to get tenant list.");
-            //2. 通过登录获取UUMS和PLATFORM_UUMS
+            //1. 通过登录获取UUMS和PLATFORM_UUMS
             String UUMS = getUums(config.getProperty("login.url"), config.getProperty("login.params"));
             String PLATFORM_UUMS = getPlatformUums(config.getProperty("login.oc.url"), config.getProperty("login.oc.params"));
             logger.info("UUMS: {}, PLATFORM_UUMS: {}", UUMS, PLATFORM_UUMS);
+
+            //2. 获取租户列表
+            logger.info("Start to get tenant list.");
+//            List<Tenant> tenants = dbManager.getTenants();
+            List<Tenant> tenants = httpClient.getTenantList(config.getProperty("tenants.num"), UUMS, PLATFORM_UUMS, config.getProperty("tenants.url"));
+            logger.info("Finished to get tenant list.");
             Map<String, Object> resultMap = new HashMap<>();
             //3. 遍历租户列表，获取统计信息，更新宽表内容
             for (Tenant tenant : tenants) {
@@ -134,6 +137,9 @@ public class DaemonService {
 
     private static String extractUUMSWithIndexOf(String cookies) {
         int start = 0;
+        if (cookies == null) {
+            return cookies;
+        }
         if (cookies.contains("PLATFORM_UUMS")) {
             start = cookies.indexOf("PLATFORM_UUMS=");
         } else {

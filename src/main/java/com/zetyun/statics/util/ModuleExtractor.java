@@ -1,11 +1,9 @@
-package com.zetyun.daemon.util;
+package com.zetyun.statics.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.zetyun.statics.model.Tenant;
 
-import java.io.IOException;
 import java.util.*;
 
 public class ModuleExtractor {
@@ -53,5 +51,26 @@ public class ModuleExtractor {
             e.printStackTrace();
             return 0.0;
         }
+    }
+
+    public static List<Tenant> extractTenantListValue(String jsonString) {
+        List<Tenant> result = new ArrayList<>();
+        try {
+            // 解析 JSON 并提取 occupancy 对象
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(jsonString);
+            JsonNode rowsNode = rootNode.path("data").path("rows");
+            for (JsonNode row : rowsNode) {
+                // 只处理domain为training的数据
+                if ("training".equals(row.path("domain").asText())) {
+                    String id = row.path("id").asText();
+                    String name = row.path("name").asText();
+                    result.add(new Tenant(id, name));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 }

@@ -1,8 +1,6 @@
-package com.zetyun.daemon.config;
+package com.zetyun.statics.config;
 
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
 public class ConfigLoader {
     private static Properties properties = new Properties();
